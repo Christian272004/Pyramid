@@ -14,7 +14,6 @@ const app = express();
 const server = createServer(app);
 const PORT = process.env.PORT ||3000;
 
-console.log("CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
 
 // Configurar Passport
 passport.use(new GoogleStrategy({
