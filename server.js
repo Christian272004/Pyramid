@@ -1,12 +1,10 @@
 import express from 'express';
-import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
-import http from 'http';
-import path from 'path';
+
 
 
 // Crear la aplicación de Express
