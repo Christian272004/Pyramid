@@ -87,10 +87,6 @@ app.get('/jugar', ensureAuthenticated, (req, res) => {
 });
 
 
-// Iniciar el servidor http
-server.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
-});
 
 
 //##############################################################################################//
@@ -153,4 +149,9 @@ io.on("connection", (socket) => {
     socket.broadcast.emit('Playerdisconnect', socket.id);
 
 });
+});
+
+// Iniciar el servidor http
+server.listen(PORT, () => {
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
