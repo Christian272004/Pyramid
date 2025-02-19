@@ -20,7 +20,7 @@ console.log("CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: 'http://pyramid.railway.internal/auth/google/callback'
+  callbackURL: 'http://pyramid-production-69a5.up.railway.app/auth/google/callback'
 },
 (accessToken, refreshToken, profile, done) => {
   if (profile._json.hd === 'sapalomera.cat') {
