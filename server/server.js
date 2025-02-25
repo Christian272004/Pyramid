@@ -1,23 +1,29 @@
 import express from 'express';
+import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import session from 'express-session';
-
-
+import http from 'http';
+import path from 'path';
+import dotenv from 'dotenv';
 
 // Crear la aplicación de Express
 const app = express();
 const server = createServer(app);
-const PORT = process.env.PORT ||3000;
+const PORT = 8080;
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Configurar Passport
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: 'http://pyramid-production-69a5.up.railway.app/auth/google/callback'
+  callbackURL: 'http://localhost:8080/auth/google/callback'
 },
 (accessToken, refreshToken, profile, done) => {
   if (profile._json.hd === 'sapalomera.cat') {
@@ -29,11 +35,11 @@ passport.use(new GoogleStrategy({
 ));
 
 passport.serializeUser((user, done) => {
-  done(null, user);
+done(null, user);
 });
 
 passport.deserializeUser((obj, done) => {
-  done(null, obj);
+done(null, obj);
 });
 
 // Configurar Express
@@ -43,15 +49,14 @@ app.use(passport.session());
 
 // Rutas de autenticación
 app.get('/auth/google',
-  passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login', 'https://www.googleapis.com/auth/userinfo.email'] })
+passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login', 'https://www.googleapis.com/auth/userinfo.email'] })
 );
 
 app.get('/auth/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/?error=No autorizado' }),
-  (req, res) => {
-    res.redirect('/games');
-  }
-);
+passport.authenticate('google', { failureRedirect: '/?error=No autorizado' }),
+(req, res) => {
+  res.redirect('/games');
+});
 
 app.get('/logout', (req, res) => {
   req.logout();
@@ -66,22 +71,26 @@ function ensureAuthenticated(req, res, next) {
   res.redirect('/');
 }
 
+// Servir archivos estáticos
+app.use(express.static(path.join(__dirname, '../public')));
+
 // Rutas del servidor
 app.get('/', (req, res) => {
-  res.redirect('http://pyramid.ctorres.cat/index.html');
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-app.get('/games', ensureAuthenticated, (req, res) => {
-  res.redirect('http://pyramid.ctorres.cat/games.html');
+app.get('/games', ensureAuthenticated , (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/games.html'));
 });
 
 app.get('/admin', ensureAuthenticated, (req, res) => {
-  res.redirect('http://pyramid.ctorres.cat/admin.html');
+    res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
 app.get('/jugar', ensureAuthenticated, (req, res) => {
-  res.redirect('http://pyramid.ctorres.cat/player.html');
+    res.sendFile(path.join(__dirname, '../public/player.html'));
 });
+
 
 
 
@@ -93,6 +102,8 @@ app.get('/jugar', ensureAuthenticated, (req, res) => {
 //##############################################################################################//
 
 // Crear servidor HTTP para Socket.io
+
+
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -105,6 +116,7 @@ let piedras = {};
 let teams = {};
 let bases = {};
 let config = {}
+let gameStarted = false;
 const baseSize = 100;
 
 // Manejo de eventos de conexión
@@ -117,16 +129,22 @@ io.on("connection", (socket) => {
   const player = { x: Math.random() * 625, y: Math.random() * 465, id: socket.id, team: team };
   players[socket.id] = player;
 
-  const piedra = Array.from({ length: 10 }, () => ({ x: Math.random() * 625, y: Math.random() * 465 }));
+  const piedra = Array.from({ length: 20 }, () => ({ x: Math.random() * 625, y: Math.random() * 465 }));
   piedras = piedra;
 
   // Enviar la posición inicial al jugador con las configuraciones del juego
-  socket.emit('CurrentPlayer', {player, config });
+  socket.emit('CurrentPlayer', {player, config, gameStarted });
 
   socket.broadcast.emit('newPlayer', player);
+  
+  if (Object.values(config).length != 0) {
+    io.emit('updatePyramid', config );
+  }
+
 
   // Enviar el estado del juego a los juagdores
   io.emit('gameState', { players, piedras });
+
 
   // Manejar el movimiento del jugador con detección de colisiones
   socket.on('move', (newPosition) => {
@@ -179,8 +197,10 @@ socket.on('dropPiedra', (data) => {
   const player = players[socket.id];
   
   if (checkBaseCollision(player, config.teams[team])) {
-    const stone = addStoneToBase(team);
-    io.emit('updatePyramid', { team, stone });
+    addStoneToBase(team);
+    const stones = config.teams[team].stones;
+    console.log('Piedra añadida a la pirámide:', stones);
+    io.emit('updatePyramid', config );
   }
 });
 
@@ -227,10 +247,13 @@ socket.on('dropPiedra', (data) => {
     }
   });
 
+  socket.on('gameStart',() => {
+    gameStarted = true;
+    io.emit('gameStart', gameStarted);
+  })
 
   // Escuchar mensajes desde el cliente
   socket.on("mensaje", (data) => {
-    console.log("Mensaje recibido:", data);
     io.emit("mensaje", data); // Reenviar a todos los clientes
   });
 
@@ -263,8 +286,8 @@ function generarPiedraAleatoria(piedras, bases) {
     
     // Generar posición aleatoria
     nuevaPiedra = {
-      x: Math.random() * 625,
-      y: Math.random() * 465
+      x: Math.random() * config.width,
+      y: Math.random() * config.height
     };
 
     // 1. Verificar colisión con bases
@@ -316,6 +339,10 @@ function assignTeam() {
   }
 }
 
+// Verifica si el jugador está en su base
+function isPlayerInBase(x, y, base) {
+  return x >= base.x && x <= base.x + 50 && y >= base.y && y <= base.y + 50;
+}
 
 // Agregar piedra a la pirámide
 function addStoneToBase(team) {
@@ -364,7 +391,7 @@ function addStoneToBase(team) {
   return stone;
 }
 
-// Iniciar servidor de sockets
+// Iniciar el servidor http
 server.listen(PORT, () => {
-  console.log(`⚡ Servidor corriendo en el puerto ${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });

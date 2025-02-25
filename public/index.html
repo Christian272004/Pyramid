@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/favicon2.ico" type="image/x-icon">
+    <link rel="stylesheet" href="css/login.css">
+    <title>Login</title>
+</head>
+<body>
+  <div class="login">
+    <form class="form" action="/auth/google">
+      <p id="error-message"></p>
+        <p class="form-title">Inicia sessió al teu compte</p>
+          <button type="submit" class="submit">
+         Inicia sessió
+             </button>
+    </form>
+  </div>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorMessage = urlParams.get('error');
+    if (errorMessage) {
+      document.getElementById('error-message').textContent = errorMessage;
+    }
+  </script>
+</body>
+</html>

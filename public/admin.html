@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <title>Pyramid (admin)</title>
+    <link rel="stylesheet" type="text/css" href="css/pyramid.css">
+	<link rel="icon" href="assets/favicon2.ico" type="image/x-icon">
+	<script defer src="http://localhost:8180/socket.io/socket.io.js"></script>
+	<script defer src="js/admin.js"></script>
+</head>
+<body>
+	<div>
+		<label for="width">Amplada (640-1280)</label> <input type="number" id="width" step="16" value="640" min="640" max="1280" autofocus /><br>
+		<label for="height">Alçada (480-960)</label> <input type="number" id="height" step="16" value="480" min="480" max="960" /><br>
+		<label for="pisos">Pisos de la piràmide (4-8)</label> <input type="number" id="pisos" step="1" value="8" min="4" max="8" /><br>
+		<button id="configurar">Configurar</button>
+		<button id="engegar">Engegar</button> <br><br>
+	</div>
+	<div>
+		<svg id="canvas" width="640" height="480" viewBox="0 0 640 480" style="border:1px solid black">
+			<g id="stones"></g>
+			<g id="bases"></g>
+			<g id="pyramid"></g>
+			<g id="players"></g>
+		</svg>
+	</div>
+</body>
+</html>
