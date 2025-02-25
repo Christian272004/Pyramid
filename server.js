@@ -19,7 +19,7 @@ passport.use(new GoogleStrategy({
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   callbackURL: 'http://pyramid-production-69a5.up.railway.app/auth/google/callback'
 },
-(profile, done) => {
+(accessToken, refreshToken, profile, done) => {
   if (profile._json.hd === 'sapalomera.cat') {
     return done(null, profile);
   } else {
